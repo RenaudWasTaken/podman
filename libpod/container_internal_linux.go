@@ -24,6 +24,7 @@ import (
 	"github.com/containers/buildah/pkg/secrets"
 	"github.com/containers/common/pkg/apparmor"
 	"github.com/containers/common/pkg/config"
+	"github.com/containers/podman/v2/cdi"
 	"github.com/containers/podman/v2/libpod/define"
 	"github.com/containers/podman/v2/libpod/events"
 	"github.com/containers/podman/v2/pkg/annotations"
@@ -512,6 +513,14 @@ func (c *Container) generateSpec(ctx context.Context) (*spec.Spec, error) {
 		return nil, err
 	}
 	g.SetLinuxCgroupsPath(cgroupPath)
+
+	// Warning: CDI may alter g.Config in place.
+	if len(c.cdiDevices) > 0 {
+		if err = cdi.UpdateSpec(g.Config, c.cdiDevices); err != nil {
+			return nil, errors.Wrapf(err, "error setting up CDI devices")
+		}
+	}
+
 
 	// Mounts need to be sorted so paths will not cover other paths
 	mounts := sortMounts(g.Mounts())

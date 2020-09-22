@@ -286,6 +286,17 @@ func WithHooksDir(hooksDirs ...string) RuntimeOption {
 	}
 }
 
+// WithHooksDir sets the directories to look for OCI runtime hook configuration.
+func WithCDI(devices []string) CtrCreateOption {
+	return func(ctr *Container) error {
+		if ctr.valid {
+			return define.ErrCtrFinalized
+		}
+		ctr.cdiDevices = devices
+		return nil
+	}
+}
+
 // WithDefaultMountsFile sets the file to look at for default mounts (mainly
 // secrets).
 // Note we are not saving this in the database as it is for testing purposes

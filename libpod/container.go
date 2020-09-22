@@ -127,6 +127,7 @@ type Container struct {
 	lock       lock.Locker
 	runtime    *Runtime
 	ociRuntime OCIRuntime
+	cdiDevices []string
 
 	rootlessSlirpSyncR *os.File
 	rootlessSlirpSyncW *os.File

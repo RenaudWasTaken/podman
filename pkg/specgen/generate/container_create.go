@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/containers/common/pkg/config"
+	"github.com/containers/podman/v2/cdi"
 	"github.com/containers/podman/v2/libpod"
 	"github.com/containers/podman/v2/libpod/image"
 	"github.com/containers/podman/v2/pkg/specgen"
@@ -13,6 +14,8 @@ import (
 	"github.com/containers/storage"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	spec "github.com/opencontainers/runtime-spec/specs-go"
 )
 
 // MakeContainer creates a container based on the SpecGenerator.
@@ -123,11 +126,39 @@ func MakeContainer(ctx context.Context, rt *libpod.Runtime, s *specgen.SpecGener
 	}
 	options = append(options, libpod.WithExitCommand(exitCommandArgs))
 
+	opts, err = extractCDIDevices(s)
+	if err != nil {
+		return nil, err
+	}
+	options = append(options, opts...)
+
 	runtimeSpec, err := SpecGenToOCI(ctx, s, rt, rtc, newImage, finalMounts, pod, command)
 	if err != nil {
 		return nil, err
 	}
 	return rt.NewContainer(ctx, runtimeSpec, options...)
+}
+
+func extractCDIDevices(s *specgen.SpecGenerator) ([]libpod.CtrCreateOption, error) {
+	var devs []spec.LinuxDevice
+	var cdiDevs []string
+	var options []libpod.CtrCreateOption
+
+	for _, device := range s.Devices {
+		if cdi.HasDevice(device.Path) {
+			cdiDevs = append(cdiDevs, device.Path)
+			continue
+		}
+
+		devs = append(devs, device)
+	}
+
+	s.Devices = devs
+	if len(cdiDevs) > 0 {
+		options = append(options, libpod.WithCDI(cdiDevs))
+	}
+
+	return options, nil
 }
 
 func createContainerOptions(ctx context.Context, rt *libpod.Runtime, s *specgen.SpecGenerator, pod *libpod.Pod, volumes []*specgen.NamedVolume, img *image.Image, command []string) ([]libpod.CtrCreateOption, error) {

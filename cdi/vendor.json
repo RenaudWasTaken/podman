@@ -1,0 +1,16 @@
+{
+  "cdiVersion": "0.2.0",
+  "kind": "vendor.com/device",
+  "devices": [
+    {
+      "name": "renaud",
+      "containerEdits": {
+        "mounts": [
+          {"hostPath": "/tmp", "containerPath": "/mnt", "options": ["rw", "rprivate", "rbind"]}
+        ]
+      }
+    }
+  ],
+  "containerSpec": {
+  }
+}
